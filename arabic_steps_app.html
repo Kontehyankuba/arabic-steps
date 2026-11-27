@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#174b3b">
+<title>Arabic Steps — My Arabic Learning App</title>
+<style>
+:root{--green:#174b3b;--green2:#236b52;--cream:#f7f5ef;--card:#fff;--ink:#17231e;--muted:#68756e;--gold:#d8b45b;--line:#e4e8e3;--red:#9b3838}
+*{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{background:var(--green);color:white;padding:22px 16px 18px}header .wrap,main{max-width:900px;margin:auto}h1{margin:0;font-size:1.55rem}header p{margin:6px 0 0;color:#e1eee7;font-size:.95rem}
+main{padding:16px;display:grid;gap:14px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.stat,.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:15px}.stat strong{display:block;font-size:1.35rem;color:var(--green)}.stat span{font-size:.78rem;color:var(--muted)}
+nav{display:flex;gap:8px;overflow-x:auto;padding:2px 0 6px}nav button{white-space:nowrap;border:1px solid var(--line);background:white;color:var(--green);padding:10px 13px;border-radius:999px;font-weight:650}nav button.active{background:var(--green);color:white;border-color:var(--green)}
+h2{font-size:1.15rem;margin:0 0 8px}h3{font-size:1rem;margin:14px 0 6px}.muted{color:var(--muted);font-size:.9rem}.arabic{font-family:"Geeza Pro","Noto Naskh Arabic","Amiri",serif;font-size:2rem;line-height:1.9;direction:rtl;text-align:center;margin:10px 0}.big-arabic{font-size:2.6rem}.translit{text-align:center;color:var(--muted);font-size:.95rem;margin:0 0 5px}.meaning{text-align:center;margin:0 0 12px}
+button,.btn{cursor:pointer;font:inherit}.primary,.secondary,.option{border-radius:11px;padding:10px 13px;border:1px solid var(--line);font-weight:650}.primary{background:var(--green);color:white;border-color:var(--green)}.secondary{background:#f4f7f4;color:var(--green)}.actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:10px 0}.letter-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.letter{background:#f6f8f5;border:1px solid var(--line);border-radius:12px;text-align:center;padding:8px 4px}.letter b{display:block;font-family:serif;font-size:2rem;color:var(--green)}.letter small{color:var(--muted)}
+.options{display:grid;gap:8px;margin-top:12px}.option{text-align:left;background:white;color:var(--ink)}.option.correct{background:#e1f4e7;border-color:#4a9b68}.option.wrong{background:#fbe8e8;border-color:#c36a6a}.feedback{min-height:24px;margin-top:10px;font-weight:650}.progress{height:9px;background:#e8ece8;border-radius:99px;overflow:hidden;margin:9px 0}.progress div{height:100%;background:var(--gold);width:0}
+input[type=text]{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;font:inherit}.small{font-size:.8rem}.lesson-list{display:grid;gap:8px}.lesson-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px;background:#f7f8f5;border-radius:10px}.lesson-item span:first-child{font-size:.9rem}
+footer{text-align:center;color:var(--muted);font-size:.78rem;padding:4px 16px 26px}.hidden{display:none!important}
+@media(min-width:680px){main{padding:22px}.letter-grid{grid-template-columns:repeat(6,1fr)}header{padding:26px 22px}}
+</style>
+</head>
+<body>
+<header><div class="wrap"><h1>🌿 Arabic Steps</h1><p>15 minutes a day · Quran reading + everyday Arabic</p></div></header>
+<main>
+<section class="stats" aria-label="Your progress">
+<div class="stat"><strong id="streak">0 🔥</strong><span>Day streak</span></div>
+<div class="stat"><strong id="completed">0</strong><span>Lessons completed</span></div>
+<div class="stat"><strong id="words">0</strong><span>Quiz answers correct</span></div>
+</section>
+<nav aria-label="Lessons">
+<button class="active" data-tab="today">Today</button><button data-tab="letters">Letters</button><button data-tab="quran">Quran</button><button data-tab="vocab">Vocabulary quiz</button><button data-tab="speak">Speak & listen</button><button data-tab="progress">Progress</button>
+</nav>
+<section id="today" class="panel tab">
+<h2>Today's 15-minute plan</h2><p class="muted">Take it slowly. Say each example aloud, then test yourself.</p>
+<div class="lesson-list">
+<div class="lesson-item"><span>1. Connected letters <b>· 4 min</b></span><button class="secondary" onclick="go('letters')">Start</button></div>
+<div class="lesson-item"><span>2. Quranic reading <b>· 4 min</b></span><button class="secondary" onclick="go('quran')">Start</button></div>
+<div class="lesson-item"><span>3. Vocabulary quiz <b>· 4 min</b></span><button class="secondary" onclick="go('vocab')">Start</button></div>
+<div class="lesson-item"><span>4. Listen & speak <b>· 3 min</b></span><button class="secondary" onclick="go('speak')">Start</button></div>
+</div>
+<div class="actions"><button class="primary" onclick="finishDay()">✓ Mark today's study complete</button></div>
+<p class="small muted">Your progress is saved in this browser on this device. See setup notes for using the app on both devices.</p>
+</section>
+<section id="letters" class="panel tab hidden">
+<h2>Lesson 1 · Connected letters</h2><p class="muted">Arabic is read from right to left. The shape of many letters changes when they connect.</p>
+<div class="letter-grid">
+<div class="letter"><b>بَ</b><small>ba</small></div><div class="letter"><b>بِ</b><small>bi</small></div><div class="letter"><b>بُ</b><small>bu</small></div><div class="letter"><b>تَ</b><small>ta</small></div>
+<div class="letter"><b>تِ</b><small>ti</small></div><div class="letter"><b>تُ</b><small>tu</small></div><div class="letter"><b>نَ</b><small>na</small></div><div class="letter"><b>نِ</b><small>ni</small></div>
+</div>
+<h3>Blend the sounds</h3>
+<div class="arabic">بَ + بَ = بَبَ</div><p class="translit">ba + ba = ba-ba</p>
+<div class="arabic">بَ + يْ + تٌ = بَيْتٌ</div><p class="translit">bay-tun</p><p class="meaning">بَيْتٌ — a house</p>
+<div class="arabic">كَ + تَ + بَ = كَتَبَ</div><p class="translit">ka-ta-ba</p><p class="meaning">كَتَبَ — he wrote</p>
+<div class="actions"><button class="secondary" onclick="say('بَ بَ بِيْتٌ كَتَبَ','ar-SA')">🔊 Hear Arabic</button><button class="primary" onclick="markLesson('letters')">Mark lesson complete</button></div>
+</section>
+<section id="quran" class="panel tab hidden">
+<h2>Lesson 2 · Quran reading</h2><p class="muted">Read right to left. Tap Hear Arabic, listen once, then repeat slowly. Transliteration is a helper, not a replacement for learning correct recitation from a qualified teacher.</p>
+<h3>1. Begin with the basmalah</h3><div class="arabic big-arabic">بِسْمِ اللَّهِ</div><p class="translit">Bismi llāh</p><p class="meaning">In the name of Allah.</p>
+<h3>2. A familiar phrase</h3><div class="arabic big-arabic">الْحَمْدُ لِلَّهِ</div><p class="translit">Al-ḥamdu lillāh</p><p class="meaning">All praise is for Allah.</p>
+<h3>3. From Surah Al-Fātiḥah (1:2)</h3><div class="arabic big-arabic">الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ</div><p class="translit">Al-ḥamdu lillāhi rabbi l-ʿālamīn</p><p class="meaning">All praise is for Allah, Lord of all worlds.</p>
+<div class="actions"><button class="secondary" onclick="say('بِسْمِ اللَّهِ. الْحَمْدُ لِلَّهِ. الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ','ar-SA')">🔊 Hear Arabic</button><button class="primary" onclick="markLesson('quran')">Mark lesson complete</button></div>
+</section>
+<section id="vocab" class="panel tab hidden">
+<h2>Lesson 3 · Vocabulary quiz</h2><p class="muted">Choose the English meaning. You'll see your score as you go.</p>
+<div class="progress"><div id="quizbar"></div></div><p id="quizcount" class="small muted">Question 1</p>
+<div class="arabic big-arabic" id="quizword">كِتَابٌ</div><p id="quizhint" class="translit">kitābun</p><div id="options" class="options"></div><p id="feedback" class="feedback" aria-live="polite"></p><div class="actions"><button class="primary" id="nextq" onclick="nextQuestion()" disabled>Next question →</button></div>
+</section>
+<section id="speak" class="panel tab hidden">
+<h2>Lesson 4 · Listen & speak</h2><p class="muted">Listen to the phrase, repeat it out loud, then try speech recognition if your browser supports it.</p>
+<div class="arabic big-arabic" id="speakArabic">السَّلَامُ عَلَيْكُمْ</div><p class="translit" id="speakLatin">As-salāmu ʿalaykum</p><p class="meaning" id="speakMeaning">Peace be upon you.</p>
+<div class="actions"><button class="secondary" onclick="say(currentPhrase.ar,'ar-SA')">🔊 Listen</button><button class="primary" onclick="listenBack()">🎙️ Try saying it</button><button class="secondary" onclick="nextPhrase()">Next phrase</button></div>
+<p id="speechResult" class="feedback" aria-live="polite"></p><p class="small muted">Speech recognition availability depends on your browser and device. If it isn't supported, listen and repeat manually.</p>
+<h3>Practice tips</h3><ul class="muted"><li>Listen once without speaking.</li><li>Repeat slowly three times.</li><li>Focus on clear sounds, not speed.</li></ul>
+</section>
+<section id="progress" class="panel tab hidden">
+<h2>Your progress</h2><p id="progressSummary">Start a lesson to build your progress.</p>
+<div class="progress"><div id="allbar"></div></div><p class="muted small">Progress is stored locally in this browser. Use Export backup to transfer it between your iPhone and computer.</p>
+<div class="actions"><button class="secondary" onclick="exportData()">Export backup</button><label class="secondary" for="importfile">Import backup</label><input class="hidden" id="importfile" type="file" accept="application/json" onchange="importData(event)"></div>
+<button class="secondary" onclick="resetData()">Reset my progress</button><p id="backupmsg" class="small muted" aria-live="polite"></p>
+</section>
+</main>
+<footer>Made for your learning journey · No account, subscription, or tracking · Audio uses your browser's built-in speech features when available.</footer>
+<script>
+const defaultData={completed:[],correct:0,attempts:0,studyDates:[],lastStudy:null};
+let data;try{data={...defaultData,...JSON.parse(localStorage.getItem('arabicStepsData')||'{}')}}catch(e){data={...defaultData}}
+function save(){localStorage.setItem('arabicStepsData',JSON.stringify(data));renderStats()}
+function localDate(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function dateDiff(a,b){return Math.round((new Date(b+'T12:00:00')-new Date(a+'T12:00:00'))/86400000)}
+function renderStats(){const today=localDate();let streak=0;if(data.studyDates.includes(today)){streak=1;let cursor=today;while(data.studyDates.includes((cursor=new Date(new Date(cursor+'T12:00:00').getTime()-86400000).toISOString().slice(0,10))))streak++}document.getElementById('streak').textContent=streak+' 🔥';document.getElementById('completed').textContent=data.completed.length;document.getElementById('words').textContent=data.correct;document.getElementById('progressSummary').textContent=`${data.completed.length} of 3 lessons completed · ${data.correct} correct quiz answers from ${data.attempts} attempts · ${streak}-day current streak.`;document.getElementById('allbar').style.width=Math.min(100,data.completed.length/3*100)+'%'}
+function go(tab){document.querySelectorAll('.tab').forEach(x=>x.classList.add('hidden'));document.getElementById(tab).classList.remove('hidden');document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));if(tab==='vocab')renderQuestion();if(tab==='progress')renderStats();window.scrollTo({top:0,behavior:'smooth'})}
+document.querySelectorAll('nav button').forEach(b=>b.addEventListener('click',()=>go(b.dataset.tab)));
+function markLesson(id){if(!data.completed.includes(id))data.completed.push(id);save();alert('Lesson saved. Great work!')}
+function finishDay(){const today=localDate();if(!data.studyDates.includes(today))data.studyDates.push(today);data.lastStudy=today;save();alert('Today’s study saved. Keep going one day at a time!')}
+function say(text,lang){if(!('speechSynthesis'in window)){alert('Audio playback is not supported in this browser. Try Safari or Chrome with internet access.');return}speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang=lang||'ar-SA';u.rate=.78;const voices=speechSynthesis.getVoices();const v=voices.find(v=>v.lang.toLowerCase().startsWith('ar'));if(v)u.voice=v;speechSynthesis.speak(u)}
+const questions=[
+{ar:'كِتَابٌ',latin:'kitābun',answer:'A book',opts:['A book','A house','Water','Peace']},
+{ar:'بَيْتٌ',latin:'baytun',answer:'A house',opts:['A day','A house','A book','A teacher']},
+{ar:'مَاءٌ',latin:'māʾun',answer:'Water',opts:['Food','Peace','Water','A door']},
+{ar:'سَلَامٌ',latin:'salāmun',answer:'Peace',opts:['A book','Peace','A house','Night']},
+{ar:'يَوْمٌ',latin:'yawm(un)',answer:'A day',opts:['A day','Water','A friend','A door']},
+{ar:'رَبٌّ',latin:'rabb(un)',answer:'Lord',opts:['Lord','A book','Peace','A house']},
+{ar:'نُورٌ',latin:'nūrun',answer:'Light',opts:['Night','Light','Water','A day']},
+{ar:'قَلْبٌ',latin:'qalbun',answer:'Heart',opts:['A door','A teacher','Heart','A book']}
+];let qi=0,answered=false;
+function renderQuestion(){const q=questions[qi%questions.length];answered=false;document.getElementById('quizword').textContent=q.ar;document.getElementById('quizhint').textContent=q.latin;document.getElementById('quizcount').textContent=`Question ${(qi%questions.length)+1} of ${questions.length}`;document.getElementById('quizbar').style.width=((qi%questions.length)/questions.length*100)+'%';document.getElementById('feedback').textContent='';document.getElementById('nextq').disabled=true;const el=document.getElementById('options');el.innerHTML='';q.opts.forEach(opt=>{const b=document.createElement('button');b.className='option';b.textContent=opt;b.onclick=()=>answer(b,opt,q.answer);el.appendChild(b)})}
+function answer(btn,opt,correct){if(answered)return;answered=true;data.attempts++;if(opt===correct){data.correct++;btn.classList.add('correct');document.getElementById('feedback').textContent='Correct! أحسنت — well done.'}else{btn.classList.add('wrong');document.getElementById('feedback').textContent='Not quite. Correct answer: '+correct;[...document.querySelectorAll('.option')].find(b=>b.textContent===correct)?.classList.add('correct')}save();document.getElementById('nextq').disabled=false}
+function nextQuestion(){qi++;renderQuestion()}
+const phrases=[{ar:'السَّلَامُ عَلَيْكُمْ',latin:'As-salāmu ʿalaykum',meaning:'Peace be upon you.'},{ar:'كَيْفَ حَالُكَ؟',latin:'Kayfa ḥāluka?',meaning:'How are you? (to a man, standard Arabic)'},{ar:'الْحَمْدُ لِلَّهِ',latin:'Al-ḥamdu lillāh',meaning:'Praise be to Allah.'},{ar:'شُكْرًا',latin:'Shukran',meaning:'Thank you.'},{ar:'مِنْ فَضْلِكَ',latin:'Min faḍlik',meaning:'Please (to a man, standard Arabic).'}];let pi=0;let currentPhrase=phrases[0];
+function nextPhrase(){pi=(pi+1)%phrases.length;currentPhrase=phrases[pi];document.getElementById('speakArabic').textContent=currentPhrase.ar;document.getElementById('speakLatin').textContent=currentPhrase.latin;document.getElementById('speakMeaning').textContent=currentPhrase.meaning;document.getElementById('speechResult').textContent=''}
+function listenBack(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){document.getElementById('speechResult').textContent='Speech recognition is not available in this browser. Use Listen, then repeat the phrase aloud.';return}const r=new SR();r.lang='ar-SA';r.interimResults=false;r.maxAlternatives=1;document.getElementById('speechResult').textContent='Listening… say the phrase now.';r.onresult=e=>{const got=e.results[0][0].transcript;document.getElementById('speechResult').textContent='I heard: '+got+' — compare it with the phrase above. Automatic pronunciation scoring is not available in this basic version.'};r.onerror=()=>document.getElementById('speechResult').textContent='Could not hear a clear response. Check microphone permission, then try again.';r.start()}
+function exportData(){const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='arabic-steps-backup.json';a.click();URL.revokeObjectURL(a.href);document.getElementById('backupmsg').textContent='Backup exported. Save this file and import it on your other device.'}
+function importData(e){const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=()=>{try{const d=JSON.parse(reader.result);if(!Array.isArray(d.completed)||!Array.isArray(d.studyDates))throw Error();data={...defaultData,...d};save();document.getElementById('backupmsg').textContent='Backup imported successfully.'}catch(err){document.getElementById('backupmsg').textContent='That file does not look like an Arabic Steps backup.'}};reader.readAsText(file)}
+function resetData(){if(confirm('Reset all saved progress on this device? Export a backup first if you want to keep it.')){data={...defaultData};save();document.getElementById('backupmsg').textContent='Progress reset.'}}
+renderStats();renderQuestion();
+</script>
+</body>
+</html>
