@@ -1,23 +1,13 @@
 import { useState } from 'react'
 import { HARAKAT } from '../data/harakat'
-import { speak } from '../lib/audio'
+import AudioBar from '../components/AudioBar'
 import { useProgress } from '../lib/useProgress'
 
 export default function Harakat() {
   const { state, markLesson } = useProgress()
   const [selectedId, setSelectedId] = useState(HARAKAT[0].id)
-  const [note, setNote] = useState('')
   const mark = HARAKAT.find((item) => item.id === selectedId) ?? HARAKAT[0]
   const learned = Boolean(state.lessons.harakat)
-
-  async function play(text: string) {
-    try {
-      setNote('')
-      await speak(text, 0.7)
-    } catch {
-      setNote('This browser could not play the sound. On iPhone try Safari, on desktop try Chrome.')
-    }
-  }
 
   return (
     <div className="stack">
@@ -56,12 +46,21 @@ export default function Harakat() {
             {mark.demo}
           </p>
           <p className="translit">{mark.demoTranslit}</p>
-          <p className="pill">{mark.name} · {mark.sound}</p>
+          <p className="pill">
+            {mark.name} · {mark.sound}
+          </p>
         </div>
         <p className="arabic-name" lang="ar" dir="rtl">
           {mark.arabicName}
         </p>
         <p>{mark.explanation}</p>
+
+        <AudioBar
+          text={mark.demo}
+          exerciseId={`haraka-${mark.id}`}
+          label={`the sound of ${mark.name}`}
+        />
+
         <div className="example-box">
           <p className="arabic" lang="ar" dir="rtl">
             {mark.example.word}
@@ -69,13 +68,15 @@ export default function Harakat() {
           <p className="translit">{mark.example.translit}</p>
           <p className="meaning">{mark.example.meaning}</p>
         </div>
+
+        <AudioBar
+          text={mark.example.word}
+          exerciseId={`haraka-example-${mark.id}`}
+          label={`the example word for ${mark.name}`}
+          compact
+        />
+
         <div className="actions center">
-          <button type="button" className="btn primary" onClick={() => play(mark.demo)}>
-            🔊 Hear the sound
-          </button>
-          <button type="button" className="btn ghost" onClick={() => play(mark.example.word)}>
-            🔊 Hear the example
-          </button>
           <button
             type="button"
             className="btn ghost"
@@ -85,7 +86,6 @@ export default function Harakat() {
             {learned ? 'Lesson complete ✓' : 'Mark lesson complete'}
           </button>
         </div>
-        <p className="small muted center">{note}</p>
       </section>
 
       <section className="card">

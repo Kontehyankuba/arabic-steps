@@ -1,14 +1,13 @@
 import { useState } from 'react'
 import { JOIN_WORDS, LETTERS } from '../data/letters'
 import { FORM_LABELS, explainWord, formsOf } from '../lib/arabic'
-import { speak } from '../lib/audio'
+import AudioBar from '../components/AudioBar'
 import { useProgress } from '../lib/useProgress'
 
 export default function Letters() {
   const { state, markLesson, seeLetter } = useProgress()
   const [selectedId, setSelectedId] = useState(LETTERS[0].id)
   const [wordId, setWordId] = useState(JOIN_WORDS[0].id)
-  const [audioNote, setAudioNote] = useState('')
 
   const letter = LETTERS.find((item) => item.id === selectedId) ?? LETTERS[0]
   const word = JOIN_WORDS.find((item) => item.id === wordId) ?? JOIN_WORDS[0]
@@ -18,15 +17,6 @@ export default function Letters() {
   function select(id: string) {
     setSelectedId(id)
     seeLetter(id)
-  }
-
-  async function play(text: string, label: string) {
-    try {
-      setAudioNote('')
-      await speak(text)
-    } catch {
-      setAudioNote(`Your browser could not play the ${label}. Try Safari on iPhone or Chrome on desktop.`)
-    }
   }
 
   return (
@@ -76,19 +66,13 @@ export default function Letters() {
             </p>
             <p className="muted small">Sound: {letter.sound}</p>
           </div>
-          <div className="actions">
-            <button type="button" className="btn primary" onClick={() => play(letter.arabicName, 'letter')}>
-              🔊 Hear letter
-            </button>
-            <button
-              type="button"
-              className="btn ghost"
-              onClick={() => play(letter.example.word, 'example word')}
-            >
-              🔊 Example
-            </button>
-          </div>
         </div>
+
+        <AudioBar
+          text={letter.arabicName}
+          exerciseId={`letter-${letter.id}`}
+          label={`the letter ${letter.name}`}
+        />
 
         <div className="form-table" role="table" aria-label={`Forms of ${letter.name}`}>
           {formsOf(letter).map(({ form, glyph }) => (
@@ -110,8 +94,12 @@ export default function Letters() {
           <p className="translit">{letter.example.translit}</p>
           <p className="meaning">{letter.example.meaning}</p>
         </div>
-
-        <p className="small muted">{audioNote}</p>
+        <AudioBar
+          text={letter.example.word}
+          exerciseId={`letter-example-${letter.id}`}
+          label={`the example word for ${letter.name}`}
+          compact
+        />
       </section>
 
       <section className="card">
@@ -153,10 +141,10 @@ export default function Letters() {
         </p>
         <p className="translit">{word.translit}</p>
         <p className="meaning">{word.meaning}</p>
+
+        <AudioBar text={word.arabic} exerciseId={`word-${word.id}`} label={`the word ${word.translit}`} />
+
         <div className="actions center">
-          <button type="button" className="btn primary" onClick={() => play(word.arabic, 'word')}>
-            🔊 Hear the word
-          </button>
           <button
             type="button"
             className="btn ghost"
