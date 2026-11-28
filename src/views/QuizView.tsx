@@ -50,7 +50,7 @@ export default function QuizView() {
 
   async function hear(text: string) {
     try {
-      await speak(text, 0.7)
+      await speak(text, 'slow')
     } catch {
       /* device voice unavailable — the text is still visible */
     }

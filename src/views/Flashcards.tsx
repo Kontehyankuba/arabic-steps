@@ -30,7 +30,7 @@ export default function Flashcards({ onNavigate }: { onNavigate: (tab: TabId) =>
   async function play(text: string) {
     try {
       setNote('')
-      await speak(text, 0.7)
+      await speak(text, 'slow')
     } catch {
       setNote('Your browser could not play audio. Try Safari on iPhone or Chrome on desktop.')
     }
