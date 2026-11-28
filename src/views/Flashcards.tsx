@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { VOCAB } from '../data/vocab'
 import type { TabId } from '../data/plan'
+import AudioBar from '../components/AudioBar'
 import { speak } from '../lib/audio'
 import { useProgress } from '../lib/useProgress'
 
 export default function Flashcards({ onNavigate }: { onNavigate: (tab: TabId) => void }) {
-  const { state, markLesson, setWordKnown } = useProgress()
+  const { state, markLesson, setWordKnown, addVocabReview } = useProgress()
   const [index, setIndex] = useState(0)
   const [flipped, setFlipped] = useState(false)
   const [note, setNote] = useState('')
@@ -16,6 +17,7 @@ export default function Flashcards({ onNavigate }: { onNavigate: (tab: TabId) =>
 
   function goNext(knownAnswer: boolean) {
     setWordKnown(word.id, knownAnswer)
+    addVocabReview(word.id, knownAnswer)
     setFlipped(false)
     if (index + 1 >= VOCAB.length) {
       markLesson('vocab')
@@ -80,6 +82,13 @@ export default function Flashcards({ onNavigate }: { onNavigate: (tab: TabId) =>
                 <span className="small muted">Tap to reveal the meaning</span>
               )}
             </button>
+
+            <AudioBar
+              text={word.arabic}
+              exerciseId={`vocab-${word.id}`}
+              label="the word"
+              compact
+            />
 
             <div className="actions center">
               <button type="button" className="btn ghost" onClick={() => void play(word.arabic)}>
