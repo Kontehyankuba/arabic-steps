@@ -1,0 +1,15 @@
+{
+  "name": "arabic-journey",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Arabic Journey — a free, beginner-friendly app for Arabic letters, vowel marks, vocabulary and Quran reading.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "preview": "vite preview",
+    "start": "node server.mjs"
+  }
+}

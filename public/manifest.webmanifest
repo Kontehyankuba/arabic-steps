@@ -1,0 +1,21 @@
+{
+  "name": "Arabic Journey — Learn Arabic & Quran",
+  "short_name": "Arabic Journey",
+  "description": "A free, beginner-friendly Arabic and Quran reading app. 15 minutes a day.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f7f5ef",
+  "theme_color": "#174b3b",
+  "lang": "en",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
