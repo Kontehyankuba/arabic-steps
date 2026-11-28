@@ -236,7 +236,11 @@ describe('progress persistence model', () => {
     expect(sanitizeState({ version: 9 })).toBeNull()
     expect(sanitizeState({ lessons: { letters: true } })).toBeNull()
 
-    const real = recordStudyDay(markLessonDone(emptyState(day('2026-11-01')), 'letters'), 15, day('2026-11-01'))
+    const real = recordStudyDay(
+      markLessonDone(emptyState(day('2026-11-01')), 'letters', day('2026-11-01')),
+      15,
+      day('2026-11-01'),
+    )
     const restored = sanitizeState(JSON.parse(JSON.stringify(real)))
     expect(restored).not.toBeNull()
     expect(restored?.lessons.letters).toBeTruthy()
