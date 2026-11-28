@@ -20,6 +20,8 @@ export type Surah = {
   id: string
   name: string
   arabicName: string
+  /** Quran chapter number (1–114) — used by the Quran Foundation API. */
+  chapter: number
   meaning: string
   intro: string
   ayat: Ayah[]
@@ -30,6 +32,7 @@ export const SURAHS: Surah[] = [
     id: 'fatihah',
     name: 'Al-Fātiḥah',
     arabicName: 'الفَاتِحَة',
+    chapter: 1,
     meaning: 'The Opening — 7 verses',
     intro:
       'The first surah of the Quran and the one we recite in every prayer. Read it slowly, one word at a time.',
@@ -97,6 +100,7 @@ export const SURAHS: Surah[] = [
     id: 'ikhlas',
     name: 'Al-Ikhlāṣ',
     arabicName: 'الإِخْلَاص',
+    chapter: 112,
     meaning: 'Sincerity — 4 verses',
     intro: 'A short surah about the oneness of Allah. Very good for memorising first.',
     ayat: [
@@ -138,6 +142,7 @@ export const SURAHS: Surah[] = [
     id: 'falaq',
     name: 'Al-Falaq',
     arabicName: 'الفَلَق',
+    chapter: 113,
     meaning: 'The Daybreak — 5 verses',
     intro: 'A surah of protection, often recited morning and evening.',
     ayat: [
@@ -187,6 +192,7 @@ export const SURAHS: Surah[] = [
     id: 'nas',
     name: 'An-Nās',
     arabicName: 'النَّاس',
+    chapter: 114,
     meaning: 'Mankind — 6 verses',
     intro: 'The last surah of the Quran. Short verses, perfect for slow reading practice.',
     ayat: [
@@ -247,7 +253,7 @@ export const RECITER = {
   name: 'Mishary Rashid Alafasy',
   source: 'Al Quran Cloud / Islamic Network CDN',
   licenceNote:
-    'Audio is streamed free, with no API key, from the Islamic Network CDN (Al Quran Cloud project). Readings are by Sheikh Mishary Rashid Alafasy. If the network is unavailable the app falls back to your device’s built-in Arabic voice.',
+    'Recitation is streamed as real recorded audio, free and with no API key, from the Islamic Network CDN (Al Quran Cloud project); readings are by Sheikh Mishary Rashid Alafasy. When a Quran Foundation API client is configured on the server, verse audio is taken from the Quran Foundation Content API instead. If audio cannot be streamed the app says so — it never synthesises a voice and presents it as recitation.',
 }
 
 /** Recitation MP3 for one ayah, from the free public CDN. */
