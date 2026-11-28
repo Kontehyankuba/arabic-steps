@@ -79,6 +79,14 @@ export default function Progress() {
             <strong>{stats.minutes}</strong>
             <span>Minutes logged</span>
           </div>
+          <div className="stat">
+            <strong>{stats.audioExercises}</strong>
+            <span>Audio exercises</span>
+          </div>
+          <div className="stat">
+            <strong>{stats.speakAttempts}</strong>
+            <span>Speaking tries</span>
+          </div>
         </div>
         <p className="small muted">
           {stats.studiedToday
@@ -130,6 +138,36 @@ export default function Progress() {
         )}
         <p className="small muted">
           Known words: {state.wordsKnown.length ? state.wordsKnown.map((id) => VOCAB.find((w) => w.id === id)?.meaning ?? id).join(', ') : 'none marked yet'}
+        </p>
+      </section>
+
+      <section className="card">
+        <h3>Audio &amp; speaking practice</h3>
+        <div className="stat-grid">
+          <div className="stat">
+            <strong>{stats.audioPlays}</strong>
+            <span>Listens completed</span>
+          </div>
+          <div className="stat">
+            <strong>{stats.vocabReviews}</strong>
+            <span>Cards reviewed</span>
+          </div>
+          <div className="stat">
+            <strong>{stats.phrasesPracticed}</strong>
+            <span>Phrases spoken</span>
+          </div>
+          <div className="stat">
+            <strong>{stats.bestSimilarity}%</strong>
+            <span>Best text match</span>
+          </div>
+          <div className="stat">
+            <strong>{stats.manualChecks}</strong>
+            <span>Self-checks</span>
+          </div>
+        </div>
+        <p className="small muted">
+          Speaking results compare the words the browser recognised with the target phrase. They
+          measure text match only — not pronunciation or tajwīd.
         </p>
       </section>
 
