@@ -4,6 +4,7 @@ import App from './App'
 import { ProgressProvider } from './lib/useProgress'
 import { primeVoices } from './lib/audio'
 import './styles.css'
+import './audio.css'
 
 primeVoices()
 

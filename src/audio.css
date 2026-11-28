@@ -1,0 +1,274 @@
+/* Styles for the audio, recitation and speaking-practice controls. */
+.audio-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin: 0.85rem 0;
+  padding: 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--green-soft);
+}
+
+.audio-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+  width: 100%;
+}
+
+.audio-bar .btn {
+  min-height: 44px;
+}
+
+.speed-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-left: auto;
+}
+
+.speed {
+  min-height: 40px;
+  min-width: 46px;
+  padding: 0.3rem 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.speed.active {
+  border-color: var(--green);
+  background: var(--green);
+  color: #fff;
+  font-weight: 600;
+}
+
+.audio-status,
+.voice-note {
+  width: 100%;
+  margin: 0.15rem 0 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.voice-note {
+  color: var(--red);
+  background: var(--red-soft);
+  border-radius: 10px;
+  padding: 0.5rem 0.65rem;
+}
+
+/* Speaking practice */
+.speak-card {
+  margin: 0.9rem 0;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
+  text-align: center;
+}
+
+.mic-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+}
+
+.mic-button {
+  flex: 1 1 220px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 52px;
+  font-size: 1rem;
+}
+
+.mic-button.listening {
+  background: var(--red);
+  border-color: var(--red);
+}
+
+.mic-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #fff;
+  animation: mic-pulse 1.1s ease-in-out infinite;
+}
+
+@keyframes mic-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(1.35);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mic-dot {
+    animation: none;
+  }
+}
+
+.listening-hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.9rem;
+  color: var(--red);
+  font-weight: 600;
+}
+
+.speak-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.result-box {
+  margin: 0.8rem 0 0;
+  padding: 0.85rem;
+  border-radius: 14px;
+  background: var(--cream);
+  border: 1px solid var(--line);
+}
+
+.word-match {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  list-style: none;
+  padding: 0;
+  margin: 0.6rem 0;
+}
+
+.word-match li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 1.05rem;
+}
+
+.word-match .hit {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+
+.word-match .miss {
+  background: var(--red-soft);
+  color: var(--red);
+}
+
+.disclaimer {
+  margin: 0.9rem 0 0;
+  padding: 0.7rem 0.8rem;
+  border-left: 3px solid var(--gold);
+  background: var(--gold-soft);
+  border-radius: 0 10px 10px 0;
+  font-size: 0.82rem;
+  color: #6a5410;
+}
+
+/* Quran recitation */
+.surah-intro {
+  margin: 0.6rem 0 0.9rem;
+  text-align: center;
+}
+
+.arabic-name {
+  font-family: var(--font-arabic);
+  font-size: calc(1.6rem * var(--arabic-scale));
+  margin: 0 0 0.2rem;
+}
+
+.recite-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+  padding: 0.75rem;
+  border-radius: 14px;
+  background: var(--green-soft);
+}
+
+.recite-controls .speed-toggle {
+  margin-left: 0;
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.88rem;
+  color: var(--ink);
+}
+
+.toggle input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--green);
+}
+
+.ayah-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.ayah-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--green-soft);
+  color: var(--green);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.quran-text {
+  font-size: calc(1.75rem * var(--arabic-scale));
+  line-height: 2.15;
+  margin: 0.6rem 0 0.4rem;
+  text-align: right;
+}
+
+.ayah {
+  transition: box-shadow 160ms ease, border-color 160ms ease, background 160ms ease;
+  border: 1px solid transparent;
+}
+
+.ayah-playing {
+  border-color: var(--gold);
+  background: var(--gold-soft);
+  box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.22);
+}
+
+.ayah-playing .ayah-number {
+  background: var(--gold);
+  color: #fff;
+}
+
+.btn.small {
+  min-height: 40px;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.85rem;
+}
