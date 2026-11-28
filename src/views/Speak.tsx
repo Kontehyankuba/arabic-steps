@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { PHRASES } from '../data/vocab'
 import AudioBar from '../components/AudioBar'
 import { listenOnce, listeningSupported, stopListening } from '../lib/audio'
@@ -30,6 +30,10 @@ export default function Speak() {
   const [score, setScore] = useState<number | null>(null)
   const [message, setMessage] = useState('')
   const [manualNote, setManualNote] = useState('')
+  // Invalidates an in-flight microphone result when the learner does something
+  // else (self-check, next phrase, retry), so a late permission error or a
+  // slow transcript cannot overwrite the newer feedback.
+  const attemptRef = useRef(0)
 
   const phrase = PHRASES[index]
   const supported = listeningSupported()
@@ -45,6 +49,7 @@ export default function Speak() {
 
   async function record() {
     reset()
+    const token = (attemptRef.current += 1)
     if (!supported) {
       setMessage(FAILURE_TEXT.unsupported)
       return
@@ -52,6 +57,7 @@ export default function Speak() {
     setListening(true)
     try {
       const heard = await listenOnce('ar-SA')
+      if (token !== attemptRef.current) return
       if (!heard.trim()) {
         setMessage(FAILURE_TEXT['no-speech'])
         return
@@ -67,20 +73,24 @@ export default function Speak() {
       addSpeakAttempt(value, phrase.id, false)
       markLesson('speaking')
     } catch (error) {
+      if (token !== attemptRef.current) return
       const reason = (error instanceof Error ? error.message : 'no-speech') as Failure
       setMessage(FAILURE_TEXT[reason] ?? FAILURE_TEXT['no-speech'])
     } finally {
-      setListening(false)
+      if (token === attemptRef.current) setListening(false)
     }
   }
 
   function stopAttempt() {
+    attemptRef.current += 1
     stopListening()
     setListening(false)
     setMessage(FAILURE_TEXT.cancelled)
   }
 
   function selfCheck(passed: boolean) {
+    attemptRef.current += 1
+    setListening(false)
     reset()
     const value = passed ? 1 : 0.5
     setScore(value)
@@ -94,6 +104,8 @@ export default function Speak() {
   }
 
   function change(delta: number) {
+    attemptRef.current += 1
+    setListening(false)
     setIndex((index + delta + PHRASES.length) % PHRASES.length)
     reset()
     stopListening()
