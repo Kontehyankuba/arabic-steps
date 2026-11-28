@@ -5,6 +5,16 @@ export const STORAGE_KEY = 'arabicJourney.progress.v1'
 
 export type QuizResult = { date: string; correct: number; total: number }
 
+/** One speaking attempt: the browser transcript compared with the target phrase. */
+export type SpeakingResult = {
+  phraseId: string
+  /** Text-match percentage, 0–100. */
+  score: number
+  date: string
+  /** True when the learner used the manual self-check instead of the microphone. */
+  manual: boolean
+}
+
 export type Settings = { arabicScale: number }
 
 export type ProgressState = {
@@ -21,6 +31,13 @@ export type ProgressState = {
   quizResults: QuizResult[]
   speakAttempts: number
   bestSimilarity: number
+  /** Ids of audio exercises (letters, vowels, words, phrases) heard to the end. */
+  audioExercises: string[]
+  /** Total audio exercises completed, including repeats of the same one. */
+  audioPlays: number
+  /** Flashcards reviewed, whether marked known or not. */
+  vocabReviews: number
+  speakingResults: SpeakingResult[]
   planDays: string[]
   settings: Settings
 }
@@ -53,6 +70,10 @@ export function emptyState(now: Date = new Date()): ProgressState {
     quizResults: [],
     speakAttempts: 0,
     bestSimilarity: 0,
+    audioExercises: [],
+    audioPlays: 0,
+    vocabReviews: 0,
+    speakingResults: [],
     planDays: [],
     settings: { arabicScale: 1 },
   }
@@ -150,13 +171,47 @@ export function recordSpeakAttempt(
   state: ProgressState,
   score: number,
   now: Date = new Date(),
+  phraseId = 'unknown',
+  manual = false,
+): ProgressState {
+  const next = touch(state, now)
+  const percent = Math.min(100, Math.max(0, Math.round(score * 100)))
+  return {
+    ...next,
+    speakAttempts: next.speakAttempts + 1,
+    bestSimilarity: Math.max(next.bestSimilarity, percent),
+    speakingResults: [
+      ...next.speakingResults.slice(-49),
+      { phraseId, score: percent, date: now.toISOString(), manual },
+    ],
+  }
+}
+
+/** Count one audio exercise played to the end. Pausing and repeating is free. */
+export function recordAudioExercise(
+  state: ProgressState,
+  exerciseId: string,
+  now: Date = new Date(),
 ): ProgressState {
   const next = touch(state, now)
   return {
     ...next,
-    speakAttempts: next.speakAttempts + 1,
-    bestSimilarity: Math.max(next.bestSimilarity, Math.round(score * 100)),
+    audioPlays: next.audioPlays + 1,
+    audioExercises: next.audioExercises.includes(exerciseId)
+      ? next.audioExercises
+      : uniq([...next.audioExercises, exerciseId]),
   }
+}
+
+/** Count one flashcard review and keep the known/unknown mark in sync. */
+export function recordVocabReview(
+  state: ProgressState,
+  wordId: string,
+  known: boolean,
+  now: Date = new Date(),
+): ProgressState {
+  const marked = markWordKnown(state, wordId, known, now)
+  return { ...marked, vocabReviews: marked.vocabReviews + 1 }
 }
 
 export function setArabicScale(state: ProgressState, scale: number): ProgressState {
@@ -179,6 +234,11 @@ export type Stats = {
   planDays: number
   speakAttempts: number
   bestSimilarity: number
+  audioExercises: number
+  audioPlays: number
+  vocabReviews: number
+  phrasesPracticed: number
+  manualChecks: number
 }
 
 export function stats(state: ProgressState, today: string = dateKey()): Stats {
@@ -204,6 +264,11 @@ export function stats(state: ProgressState, today: string = dateKey()): Stats {
     planDays: state.planDays.length,
     speakAttempts: state.speakAttempts,
     bestSimilarity: state.bestSimilarity,
+    audioExercises: state.audioExercises.length,
+    audioPlays: state.audioPlays,
+    vocabReviews: state.vocabReviews,
+    phrasesPracticed: new Set(state.speakingResults.map((result) => result.phraseId)).size,
+    manualChecks: state.speakingResults.filter((result) => result.manual).length,
   }
 }
 
@@ -234,6 +299,20 @@ export function sanitizeState(raw: unknown, now: Date = new Date()): ProgressSta
     : []
   const scaleInput = (value.settings as Record<string, unknown> | undefined)?.arabicScale
   const scale = typeof scaleInput === 'number' && scaleInput >= 0.8 && scaleInput <= 1.6 ? scaleInput : 1
+  const speakingResults: SpeakingResult[] = Array.isArray(value.speakingResults)
+    ? value.speakingResults
+        .filter((item): item is SpeakingResult => {
+          if (!item || typeof item !== 'object') return false
+          return typeof (item as Record<string, unknown>).score === 'number'
+        })
+        .map((item) => ({
+          phraseId: typeof item.phraseId === 'string' ? item.phraseId : 'unknown',
+          score: Math.min(100, Math.max(0, Math.round(item.score))),
+          date: String(item.date ?? now.toISOString()),
+          manual: item.manual === true,
+        }))
+        .slice(-50)
+    : []
   return {
     ...base,
     createdAt: typeof value.createdAt === 'string' ? value.createdAt : base.createdAt,
@@ -247,6 +326,10 @@ export function sanitizeState(raw: unknown, now: Date = new Date()): ProgressSta
     speakAttempts: typeof value.speakAttempts === 'number' ? Math.max(0, Math.round(value.speakAttempts)) : 0,
     bestSimilarity:
       typeof value.bestSimilarity === 'number' ? Math.min(100, Math.max(0, Math.round(value.bestSimilarity))) : 0,
+    audioExercises: strings(value.audioExercises),
+    audioPlays: typeof value.audioPlays === 'number' ? Math.max(0, Math.round(value.audioPlays)) : 0,
+    vocabReviews: typeof value.vocabReviews === 'number' ? Math.max(0, Math.round(value.vocabReviews)) : 0,
+    speakingResults,
     planDays: strings(value.planDays),
     settings: { arabicScale: scale },
   }

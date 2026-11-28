@@ -1,98 +1,92 @@
 /**
  * Audio helpers built only on free, built-in browser features plus one free,
  * key-less Quran recitation CDN. No paid API, no account, no tracking.
+ *
+ * Speech synthesis is delegated to the shared engine in ./tts so every screen
+ * shares one voice, one speed setting and one playback state.
  */
 import { recitationUrl } from '../data/quran'
+import { isSpeechSupported, speakOnce, stopAllSpeech, type SpeechSpeed } from './tts'
 
 export { recitationUrl }
 
 export function speechSupported(): boolean {
-  return typeof window !== 'undefined' && 'speechSynthesis' in window
+  return isSpeechSupported()
 }
 
-let currentUtterance: SpeechSynthesisUtterance | null = null
-
-function pickArabicVoice(): SpeechSynthesisVoice | null {
-  if (!speechSupported()) return null
-  const voices = window.speechSynthesis.getVoices()
-  return (
-    voices.find((voice) => voice.lang?.toLowerCase().startsWith('ar')) ??
-    voices.find((voice) => /arab/i.test(voice.name)) ??
-    null
-  )
-}
-
-/** Speak Arabic text with the device voice. Resolves when playback finishes. */
-export function speak(text: string, rate = 0.75): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (!speechSupported()) {
-      reject(new Error('Speech is not available in this browser'))
-      return
-    }
-    window.speechSynthesis.cancel()
-    const utterance = new SpeechSynthesisUtterance(text)
-    utterance.lang = 'ar-SA'
-    utterance.rate = rate
-    utterance.pitch = 1
-    const voice = pickArabicVoice()
-    if (voice) utterance.voice = voice
-    utterance.onend = () => {
-      currentUtterance = null
-      resolve()
-    }
-    utterance.onerror = () => {
-      currentUtterance = null
-      reject(new Error('The device voice could not read this text'))
-    }
-    currentUtterance = utterance
-    window.speechSynthesis.speak(utterance)
-  })
+/**
+ * Read Arabic text with the device voice. Resolves when playback finishes (or
+ * fails) so callers never hang.
+ */
+export function speak(text: string, speed: SpeechSpeed = 'normal'): Promise<void> {
+  if (!isSpeechSupported()) return Promise.reject(new Error('Speech is not available in this browser'))
+  return speakOnce(text, { speed })
 }
 
 export function stopSpeaking(): void {
-  if (!speechSupported()) return
-  if (currentUtterance) {
-    currentUtterance.onend = null
-    currentUtterance.onerror = null
-    currentUtterance = null
-  }
-  window.speechSynthesis.cancel()
+  stopAllSpeech()
 }
 
 let currentAudio: HTMLAudioElement | null = null
+let settleCurrent: (() => void) | null = null
 
-/** Stream one ayah of recitation. Rejects so callers can fall back to the device voice. */
-export function playRecitation(globalAyah: number): Promise<void> {
+/**
+ * Stream one audio file (a real recitation). Rejects so the caller can tell the
+ * learner honestly that the recitation could not be played.
+ */
+export function playAudioUrl(url: string): Promise<void> {
   return new Promise((resolve, reject) => {
     if (typeof Audio === 'undefined') {
       reject(new Error('Audio is not available'))
       return
     }
     stopRecitation()
-    stopSpeaking()
-    const audio = new Audio(recitationUrl(globalAyah))
+    stopAllSpeech()
+    const audio = new Audio(url)
     audio.preload = 'auto'
-    audio.onended = () => {
+    let settled = false
+    const finish = () => {
+      if (settled) return
+      settled = true
       currentAudio = null
+      settleCurrent = null
       resolve()
     }
+    audio.onended = finish
     audio.onerror = () => {
+      if (settled) return
+      settled = true
       currentAudio = null
+      settleCurrent = null
       reject(new Error('The recitation could not be streamed'))
     }
     currentAudio = audio
+    settleCurrent = finish
     void audio.play().catch(() => {
+      if (settled) return
+      settled = true
       currentAudio = null
-      reject(new Error('Playback was blocked'))
+      settleCurrent = null
+      reject(new Error('Playback was blocked — tap play again'))
     })
   })
+}
+
+/** Stream one ayah from the free Alafasy CDN. */
+export function playRecitation(globalAyah: number): Promise<void> {
+  return playAudioUrl(recitationUrl(globalAyah))
 }
 
 export function stopRecitation(): void {
   if (currentAudio) {
     currentAudio.pause()
+    currentAudio.onended = null
+    currentAudio.onerror = null
     currentAudio = null
   }
+  const settle = settleCurrent
+  settleCurrent = null
+  settle?.()
 }
 
 type RecognitionLike = {
@@ -123,9 +117,26 @@ export function listeningSupported(): boolean {
   return recognitionCtor() !== null
 }
 
+let activeRecognition: RecognitionLike | null = null
+
+/** Abort an in-flight attempt (used by Stop / Retry and on unmount). */
+export function stopListening(): void {
+  const recognition = activeRecognition
+  activeRecognition = null
+  if (!recognition) return
+  try {
+    recognition.abort()
+  } catch {
+    /* already stopped */
+  }
+}
+
+export type ListenFailure = 'unsupported' | 'permission' | 'no-speech' | 'cancelled'
+
 /**
- * Record one attempt with the browser's speech recognition (free, on-device or
- * browser-provided). Resolves with the transcript; rejects with a readable reason.
+ * Record one attempt with the browser's own speech recognition (free: Chrome,
+ * Edge and Safari provide it; nothing is sent to a paid service).
+ * Resolves with the transcript, rejects with a readable reason.
  */
 export function listenOnce(lang = 'ar-SA'): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -134,46 +145,51 @@ export function listenOnce(lang = 'ar-SA'): Promise<string> {
       reject(new Error('unsupported'))
       return
     }
+    stopListening()
     const recognition = new Ctor()
+    activeRecognition = recognition
     recognition.lang = lang
     recognition.interimResults = false
     recognition.maxAlternatives = 1
     recognition.continuous = false
     let settled = false
+    const cleanup = () => {
+      if (activeRecognition === recognition) activeRecognition = null
+    }
     const finish = (transcript: string) => {
       if (settled) return
       settled = true
+      cleanup()
       resolve(transcript)
     }
-    recognition.onresult = (event) => {
-      const transcript = event.results?.[0]?.[0]?.transcript ?? ''
-      finish(transcript)
-    }
-    recognition.onerror = (event) => {
+    const fail = (reason: ListenFailure) => {
       if (settled) return
       settled = true
-      reject(new Error(event?.error === 'not-allowed' ? 'permission' : 'no-speech'))
+      cleanup()
+      reject(new Error(reason))
+    }
+    recognition.onresult = (event) => {
+      finish(event.results?.[0]?.[0]?.transcript ?? '')
+    }
+    recognition.onerror = (event) => {
+      const code = event?.error
+      if (code === 'not-allowed' || code === 'service-not-allowed') fail('permission')
+      else if (code === 'aborted') fail('cancelled')
+      else fail('no-speech')
     }
     recognition.onend = () => {
-      if (!settled) {
-        settled = true
-        reject(new Error('no-speech'))
-      }
+      fail('no-speech')
     }
     try {
       recognition.start()
     } catch {
-      settled = true
-      reject(new Error('no-speech'))
+      fail('no-speech')
     }
   })
 }
 
 /** Warm up the voice list on iOS, where voices load asynchronously. */
 export function primeVoices(): void {
-  if (!speechSupported()) return
+  if (!isSpeechSupported()) return
   window.speechSynthesis.getVoices()
-  window.speechSynthesis.onvoiceschanged = () => {
-    window.speechSynthesis.getVoices()
-  }
 }

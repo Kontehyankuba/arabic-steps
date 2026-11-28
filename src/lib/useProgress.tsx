@@ -14,9 +14,11 @@ import {
   markLessonDone,
   markLetterSeen,
   markWordKnown,
+  recordAudioExercise,
   recordQuiz,
   recordSpeakAttempt,
   recordStudyDay,
+  recordVocabReview,
   saveState,
   setArabicScale,
   stats,
@@ -33,7 +35,9 @@ type ProgressContextValue = {
   saveQuiz: (correct: number, total: number) => void
   setWordKnown: (wordId: string, known: boolean) => void
   seeLetter: (letterId: string) => void
-  addSpeakAttempt: (score: number) => void
+  addSpeakAttempt: (score: number, phraseId?: string, manual?: boolean) => void
+  addAudioExercise: (exerciseId: string) => void
+  addVocabReview: (wordId: string, known: boolean) => void
   setScale: (scale: number) => void
   replaceState: (next: ProgressState) => void
   reset: () => void
@@ -67,7 +71,10 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
       saveQuiz: (correct, total) => update((current) => recordQuiz(current, correct, total)),
       setWordKnown: (wordId, known) => update((current) => markWordKnown(current, wordId, known)),
       seeLetter: (letterId) => update((current) => markLetterSeen(current, letterId)),
-      addSpeakAttempt: (score) => update((current) => recordSpeakAttempt(current, score)),
+      addSpeakAttempt: (score, phraseId, manual) =>
+        update((current) => recordSpeakAttempt(current, score, new Date(), phraseId, manual)),
+      addAudioExercise: (exerciseId) => update((current) => recordAudioExercise(current, exerciseId)),
+      addVocabReview: (wordId, known) => update((current) => recordVocabReview(current, wordId, known)),
       setScale: (scale) => update((current) => setArabicScale(current, scale)),
       replaceState: (next) => setState(next),
       reset: () => {

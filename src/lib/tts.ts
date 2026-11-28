@@ -198,12 +198,14 @@ class ArabicSpeaker {
     utterance.onerror = () => {
       if (this.utterance !== utterance) return
       this.utterance = null
+      const failed = this.onDone
       this.onDone = null
       this.set({
         status: 'idle',
         text: value,
         notice: 'The device voice could not read this text. Try the other speed, or another browser.',
       })
+      failed?.()
     }
 
     this.utterance = utterance
@@ -322,6 +324,16 @@ export function useArabicSpeech(): ArabicSpeech {
 /** Non-hook access for one-off callers (e.g. stopping audio on tab change). */
 export function stopAllSpeech(): void {
   speaker.stop()
+}
+
+/**
+ * Promise wrapper for callers that need to know when a line finished.
+ * Always resolves, so a missing voice can never hang the UI.
+ */
+export function speakOnce(text: string, options: PlayOptions = {}): Promise<void> {
+  return new Promise((resolve) => {
+    speaker.play(text, { ...options, onEnd: () => { options.onEnd?.(); resolve() } })
+  })
 }
 
 export function isSpeechSupported(): boolean {
