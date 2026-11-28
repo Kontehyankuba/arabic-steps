@@ -5,15 +5,17 @@ import { SURAHS } from '../data/quran'
 import { VOCAB, PHRASES } from '../data/vocab'
 import { DAILY_PLAN, LESSONS, TOTAL_PLAN_MINUTES, TOTAL_LESSONS } from '../data/plan'
 import {
+  connect,
   explainWord,
-  formFor,
   normalizeArabic,
+  shapeFor,
   similarity,
   similarityFeedback,
-  stripDiacritics,
+  stripTashkeel,
 } from './arabic'
 import { buildQuiz, quizMessage, scoreQuiz } from './quiz'
 import {
+  computeStreak,
   emptyState,
   markLessonDone,
   markLetterSeen,
@@ -24,8 +26,9 @@ import {
   sanitizeState,
   setArabicScale,
   stats,
-  streakOf,
 } from './progress'
+
+const day = (iso: string) => new Date(`${iso}T09:00:00.000Z`)
 
 describe('arabic content', () => {
   it('has 28 letters with four distinct forms and a sound', () => {
@@ -43,9 +46,7 @@ describe('arabic content', () => {
 
   it('marks the six non-joining letters correctly', () => {
     const nonJoining = LETTERS.filter((letter) => !letter.connects).map((letter) => letter.name)
-    expect(nonJoining.sort()).toEqual(
-      ['Alif', 'Dāl', 'Dhāl', 'Rāʾ', 'Wāw', 'Zāy'].sort(),
-    )
+    expect(nonJoining.sort()).toEqual(['Alif', 'Dāl', 'Dhāl', 'Rāʾ', 'Wāw', 'Zāy'].sort())
   })
 
   it('keeps medial and final shapes distinct for joining letters', () => {
@@ -88,9 +89,14 @@ describe('arabic content', () => {
         expect(ayah.meaning).toBeTruthy()
         expect(ayah.tip).toBeTruthy()
         expect(ayah.global).toBeGreaterThan(0)
+        if (index > 0) {
+          // Running Quran ayah numbers must increase by one inside a surah.
+          expect(ayah.global).toBe(surah.ayat[index - 1].global + 1)
+        }
       })
-      expect(surah.ayat[0].global).toBe(surah.startGlobal)
     }
+    expect(fatihah?.ayat[0].global).toBe(1)
+    expect(SURAHS.find((surah) => surah.id === 'ikhlas')?.ayat[0].global).toBe(6222)
   })
 
   it('plans exactly fifteen minutes a day and lists every lesson', () => {
@@ -108,27 +114,35 @@ describe('arabic content', () => {
 
 describe('arabic helpers', () => {
   it('picks the right positional form', () => {
-    const beh = LETTERS.find((letter) => letter.id === 'beh')!
-    expect(formFor(beh, true, true)).toBe('medial')
-    expect(formFor(beh, true, false)).toBe('final')
-    expect(formFor(beh, false, true)).toBe('initial')
-    expect(formFor(beh, false, false)).toBe('isolated')
+    const beh = LETTERS.find((letter) => letter.id === 'ba')!
+    expect(shapeFor(beh, { previous: beh, next: beh })).toBe('medial')
+    expect(shapeFor(beh, { previous: beh, next: null })).toBe('final')
+    expect(shapeFor(beh, { previous: null, next: beh })).toBe('initial')
+    expect(shapeFor(beh, { previous: null, next: null })).toBe('isolated')
+
     const alif = LETTERS.find((letter) => letter.id === 'alif')!
-    expect(formFor(alif, true, false)).toBe('final')
-    expect(formFor(alif, false, true)).toBe('isolated')
+    expect(shapeFor(alif, { previous: beh, next: null })).toBe('final')
+    // Alif never joins forward, so it stays isolated before another letter.
+    expect(shapeFor(alif, { previous: null, next: beh })).toBe('isolated')
   })
 
   it('explains how a word joins letter by letter', () => {
-    const word = JOIN_WORDS[0]
-    const steps = explainWord(word)
-    expect(steps.length).toBeGreaterThan(1)
-    expect(steps.map((step) => step.glyph).join('')).toBe(word.arabic)
-    expect(steps.every((step) => step.form !== undefined)).toBe(true)
+    for (const word of JOIN_WORDS) {
+      const steps = explainWord(word.letters)
+      expect(steps).toHaveLength(word.letters.length)
+      expect(steps.map((step) => step.glyph).join('')).toBe(connect(word.letters))
+      expect(normalizeArabic(steps.map((step) => step.glyph).join(''))).toBe(
+        normalizeArabic(word.arabic),
+      )
+    }
+    expect(JOIN_WORDS[0].letters[0]).toBe('ba')
+    expect(() => explainWord(['nope'])).toThrow()
   })
 
   it('normalises and compares Arabic for speaking practice', () => {
-    expect(stripDiacritics('كِتَابٌ')).toBe('كتاب')
+    expect(stripTashkeel('كِتَابٌ')).toBe('كتاب')
     expect(normalizeArabic('أَهْلًا')).toBe('اهلا')
+    expect(normalizeArabic('بـيـت')).toBe('بيت')
     expect(similarity('مرحبا', 'مَرْحَبًا')).toBe(1)
     expect(similarity('', 'مرحبا')).toBe(0)
     expect(similarity('كتاب', 'قلم')).toBeLessThan(0.6)
@@ -153,48 +167,50 @@ describe('quiz', () => {
     const allRight = quiz.map((question) => question.answer)
     expect(scoreQuiz(quiz, allRight)).toBe(5)
     expect(scoreQuiz(quiz, [null, null, null, null, null])).toBe(0)
-    expect(quizMessage(5, 5)).toMatch(/full marks/i)
-    expect(quizMessage(2, 5)).toMatch(/again/i)
+    expect(quizMessage(5, 5)).toMatch(/perfect score/i)
+    expect(quizMessage(2, 5)).toMatch(/keep going/i)
   })
 })
 
 describe('progress persistence model', () => {
   it('starts empty and tracks study days as a streak', () => {
-    let state = emptyState('2026-11-01')
-    expect(state.days).toEqual([])
-    expect(streakOf(state, '2026-11-01')).toBe(0)
+    let state = emptyState(day('2026-11-01'))
+    expect(state.studyDates).toEqual([])
+    expect(computeStreak(state.studyDates, '2026-11-01')).toBe(0)
 
-    state = recordStudyDay(state, '2026-11-01')
-    state = recordStudyDay(state, '2026-11-02')
-    state = recordStudyDay(state, '2026-11-02')
-    expect(state.days).toEqual(['2026-11-01', '2026-11-02'])
-    expect(streakOf(state, '2026-11-02')).toBe(2)
+    state = recordStudyDay(state, 15, day('2026-11-01'))
+    state = recordStudyDay(state, 15, day('2026-11-02'))
+    state = recordStudyDay(state, 15, day('2026-11-02'))
+    expect(state.studyDates).toEqual(['2026-11-01', '2026-11-02'])
+    expect(state.minutes).toBe(45)
+    expect(computeStreak(state.studyDates, '2026-11-02')).toBe(2)
     // A missed day breaks the streak.
-    expect(streakOf(state, '2026-11-05')).toBe(0)
+    expect(computeStreak(state.studyDates, '2026-11-05')).toBe(0)
     // Yesterday still counts as an active streak today.
-    expect(streakOf(state, '2026-11-03')).toBe(2)
+    expect(computeStreak(state.studyDates, '2026-11-03')).toBe(2)
   })
 
   it('records lessons, words, letters, quizzes and speaking attempts', () => {
-    let state = emptyState('2026-11-01')
-    state = markLessonDone(state, 'letters')
-    state = markLessonDone(state, 'letters')
-    expect(state.lessons.letters).toBe(true)
+    const now = day('2026-11-01')
+    let state = emptyState(now)
+    state = markLessonDone(state, 'letters', now)
+    state = markLessonDone(state, 'letters', now)
+    expect(state.lessons.letters).toBeTruthy()
 
-    state = markWordKnown(state, 'kitab', true)
-    state = markWordKnown(state, 'qalam', true)
-    state = markWordKnown(state, 'qalam', false)
+    state = markWordKnown(state, 'kitab', true, now)
+    state = markWordKnown(state, 'qalam', true, now)
+    state = markWordKnown(state, 'qalam', false, now)
     expect(state.wordsKnown).toEqual(['kitab'])
 
-    state = markLetterSeen(state, 'beh')
-    state = markLetterSeen(state, 'beh')
-    expect(state.lettersSeen).toEqual(['beh'])
+    state = markLetterSeen(state, 'ba', now)
+    state = markLetterSeen(state, 'ba', now)
+    expect(state.lettersSeen).toEqual(['ba'])
 
-    state = recordQuiz(state, 4, 5, '2026-11-01T10:00:00.000Z')
-    state = recordQuiz(state, 5, 5, '2026-11-01T11:00:00.000Z')
+    state = recordQuiz(state, 4, 5, now)
+    state = recordQuiz(state, 5, 5, now)
     expect(state.quizResults).toHaveLength(2)
 
-    state = recordSpeakAttempt(state, 0.8)
+    state = recordSpeakAttempt(state, 0.8, now)
     expect(state.speakAttempts).toBe(1)
     expect(state.bestSimilarity).toBe(80)
 
@@ -207,10 +223,11 @@ describe('progress persistence model', () => {
     expect(summary.lessonPercent).toBe(Math.round((1 / TOTAL_LESSONS) * 100))
   })
 
-  it('keeps a readable Arabic text size preference', () => {
-    const state = setArabicScale(emptyState('2026-11-01'), 1.4)
+  it('keeps a readable Arabic text size preference inside safe limits', () => {
+    const state = setArabicScale(emptyState(day('2026-11-01')), 1.4)
     expect(state.settings.arabicScale).toBe(1.4)
-    expect(setArabicScale(state, 99).settings.arabicScale).toBe(1.4)
+    expect(setArabicScale(state, 99).settings.arabicScale).toBe(1.6)
+    expect(setArabicScale(state, Number.NaN).settings.arabicScale).toBe(1)
   })
 
   it('rejects corrupt or foreign saved data but accepts real backups', () => {
@@ -219,18 +236,25 @@ describe('progress persistence model', () => {
     expect(sanitizeState({ version: 9 })).toBeNull()
     expect(sanitizeState({ lessons: { letters: true } })).toBeNull()
 
-    const real = recordStudyDay(markLessonDone(emptyState('2026-11-01'), 'letters'), '2026-11-01')
+    const real = recordStudyDay(markLessonDone(emptyState(day('2026-11-01')), 'letters'), 15, day('2026-11-01'))
     const restored = sanitizeState(JSON.parse(JSON.stringify(real)))
     expect(restored).not.toBeNull()
-    expect(restored?.lessons.letters).toBe(true)
-    expect(restored?.days).toEqual(['2026-11-01'])
+    expect(restored?.lessons.letters).toBeTruthy()
+    expect(restored?.studyDates).toEqual(['2026-11-01'])
+    expect(restored?.minutes).toBe(15)
   })
 
-  it('drops unknown keys when sanitising', () => {
-    const real = emptyState('2026-11-01')
-    const restored = sanitizeState({ ...real, hacker: 'x', lessons: { letters: true, bogus: true } })
+  it('drops unknown keys and unknown word ids when sanitising', () => {
+    const real = emptyState(day('2026-11-01'))
+    const restored = sanitizeState({
+      ...real,
+      hacker: 'x',
+      lessons: { letters: '2026-11-01T09:00:00.000Z', bogus: true },
+      wordsKnown: ['kitab', 'not-a-word'],
+    })
     expect(restored).not.toBeNull()
     expect(restored).not.toHaveProperty('hacker')
     expect(restored?.lessons.bogus).toBeUndefined()
+    expect(restored?.wordsKnown).toEqual(['kitab'])
   })
 })

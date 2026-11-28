@@ -160,7 +160,8 @@ export function recordSpeakAttempt(
 }
 
 export function setArabicScale(state: ProgressState, scale: number): ProgressState {
-  return { ...state, settings: { ...state.settings, arabicScale: scale } }
+  const safe = Number.isFinite(scale) ? Math.min(1.6, Math.max(0.8, scale)) : 1
+  return { ...state, settings: { ...state.settings, arabicScale: safe } }
 }
 
 export type Stats = {
@@ -210,6 +211,8 @@ export function stats(state: ProgressState, today: string = dateKey()): Stats {
 export function sanitizeState(raw: unknown, now: Date = new Date()): ProgressState | null {
   if (!raw || typeof raw !== 'object') return null
   const value = raw as Record<string, unknown>
+  // Only files written by this app carry the schema version we understand.
+  if (value.version !== 1) return null
   const base = emptyState(now)
   const strings = (input: unknown): string[] =>
     Array.isArray(input) ? uniq(input.filter((item): item is string => typeof item === 'string')) : []
